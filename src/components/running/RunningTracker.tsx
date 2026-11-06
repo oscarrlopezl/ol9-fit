@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Square, Trash2, Heart, Flame, Compass, Zap, MapPin, Radio, Activity } from 'lucide-react';
+import { Play, Pause, Square, Trash2, Heart, Flame, Compass, Zap, MapPin, Radio, Activity, Watch } from 'lucide-react';
 import { GeoPoint, RunSession, Split } from '../../types';
 import { calculateHaversineDistanceMeters, wearableSyncService } from '../../services/wearableSyncService';
 import { dbService } from '../../services/dbService';
@@ -26,8 +26,41 @@ export const RunningTracker: React.FC = () => {
   // Simulation mode toggle for indoor testing
   const [isDemoMode, setIsDemoMode] = useState(false);
 
-  // Wearable live heart rate
-  const [heartRate, setHeartRate] = useState<number | null>(null);
+  // Wearable live heart rate & GloryFit link
+  const [heartRate, setHeartRate] = useState<number | null>(wearableSyncService.getLastBpm());
+  const [gloryFitDeviceName, setGloryFitDeviceName] = useState<string | null>(wearableSyncService.getConnectedDeviceName());
+  const [isGloryFitConnecting, setIsGloryFitConnecting] = useState(false);
+
+  // Periodic poll of wearable heart rate if active
+  useEffect(() => {
+    const hrPoll = setInterval(() => {
+      const liveBpm = wearableSyncService.getLastBpm();
+      const devName = wearableSyncService.getConnectedDeviceName();
+      if (liveBpm) setHeartRate(liveBpm);
+      if (devName) setGloryFitDeviceName(devName);
+    }, 1500);
+    return () => clearInterval(hrPoll);
+  }, []);
+
+  const handleConnectGloryFitHUD = async () => {
+    setIsGloryFitConnecting(true);
+    try {
+      const res = await wearableSyncService.connectGloryFitWatch(
+        (data) => setHeartRate(data.bpm),
+        () => {
+          setHeartRate(null);
+          setGloryFitDeviceName(null);
+        }
+      );
+      if (res.success) {
+        setGloryFitDeviceName(res.deviceName);
+      }
+    } catch (e) {
+      console.warn('HUD GloryFit connect failed:', e);
+    } finally {
+      setIsGloryFitConnecting(false);
+    }
+  };
 
   // Post Run Modal
   const [completedSession, setCompletedSession] = useState<RunSession | null>(null);
@@ -397,13 +430,24 @@ export const RunningTracker: React.FC = () => {
             </span>
           </div>
 
-          {/* Simulation Toggle & Heart Rate Badge */}
+          {/* GloryFit Link, Heart Rate Badge & Simulation Toggle */}
           <div className="flex items-center gap-2">
-            {heartRate && (
+            {heartRate ? (
               <div className="flex items-center gap-1 bg-red-500/20 border border-red-500/40 px-2.5 py-0.5 rounded-full text-red-400 font-mono text-xs">
                 <Heart className="w-3.5 h-3.5 fill-current animate-pulse" />
                 <span>{heartRate} bpm</span>
+                <span className="text-[9px] text-slate-400 hidden sm:inline">(GloryFit)</span>
               </div>
+            ) : (
+              <button
+                onClick={handleConnectGloryFitHUD}
+                disabled={isGloryFitConnecting}
+                className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-industrial-900 border border-lime-accent/40 text-lime-accent hover:bg-industrial-800 text-[10px] font-mono font-bold transition-colors"
+                title="Vincular pulso desde tu reloj GloryFit"
+              >
+                <Watch className="w-3 h-3 text-lime-accent" />
+                <span>{isGloryFitConnecting ? 'Buscando...' : '+ Vincular GloryFit'}</span>
+              </button>
             )}
             <button
               onClick={() => !isRunning && setIsDemoMode(!isDemoMode)}
@@ -414,7 +458,7 @@ export const RunningTracker: React.FC = () => {
                   : 'bg-industrial-900 border-industrial-700 text-slate-400'
               }`}
             >
-              {isDemoMode ? 'SIMULACIÓN GPS ACTIVA' : 'GPS REAL'}
+              {isDemoMode ? 'SIMULACIÓN' : 'GPS REAL'}
             </button>
           </div>
         </div>
