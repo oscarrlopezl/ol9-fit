@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Watch, Shield, Wifi, WifiOff, Heart } from 'lucide-react';
+import { Volume2, VolumeX, Watch, Shield, Wifi, WifiOff, Heart, Users } from 'lucide-react';
 import { audioService } from '../../services/audioService';
 import { wearableSyncService } from '../../services/wearableSyncService';
+import { authService } from '../../services/authService';
+import { UserProfile } from '../../types';
 
 interface HeaderProps {
   onOpenSync: () => void;
+  onOpenProfiles: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenSync }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenSync, onOpenProfiles }) => {
   const [muted, setMuted] = useState(audioService.getMuted());
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [connectedDevice, setConnectedDevice] = useState<string | null>(wearableSyncService.getConnectedDeviceName());
+  const [activeUser, setActiveUser] = useState<UserProfile>(authService.getActiveUser());
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -23,10 +27,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSync }) => {
       setConnectedDevice(wearableSyncService.getConnectedDeviceName());
     }, 2000);
 
+    // Listen to user changes
+    const unsub = authService.onUserChanged((updatedUser) => {
+      setActiveUser(updatedUser);
+    });
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       clearInterval(interval);
+      unsub();
     };
   }, []);
 
@@ -36,12 +46,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSync }) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-industrial-950/90 backdrop-blur-md border-b border-industrial-800 px-4 py-3">
+    <header className="sticky top-0 z-40 bg-industrial-950/90 backdrop-blur-md border-b border-industrial-800 px-4 py-3 font-industrial">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* BRAND LOGO & OFFICIAL TITLE */}
         <div className="flex items-center gap-3">
           {/* Industrial Hexagon Logo */}
-          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-industrial-800 via-industrial-900 to-industrial-950 border-2 border-lime-accent/50 flex items-center justify-center shadow-lime-glow overflow-hidden">
+          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-industrial-800 via-industrial-900 to-industrial-950 border-2 border-lime-accent/50 flex items-center justify-center shadow-lime-glow overflow-hidden shrink-0">
             <span className="font-mono font-black text-sm tracking-tighter text-lime-accent">
               OL9
             </span>
@@ -65,18 +75,37 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSync }) => {
 
         {/* TOP CONTROLS & ICONS */}
         <div className="flex items-center gap-2">
-          {/* GloryFit Connection Status Badge */}
+          {/* Active Family User Profile Button */}
+          <button
+            onClick={onOpenProfiles}
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-industrial-900 hover:bg-industrial-850 border border-industrial-700 hover:border-lime-accent/50 transition-all text-left shadow-sm group"
+            title="Cambiar Perfil Familiar"
+          >
+            <span className="text-base leading-none group-hover:scale-110 transition-transform">
+              {activeUser.avatar}
+            </span>
+            <div className="hidden sm:block">
+              <span className="text-xs font-mono font-bold text-slate-200 block leading-tight max-w-[90px] truncate">
+                {activeUser.name}
+              </span>
+              <span className="text-[9px] font-mono text-lime-accent block leading-none">
+                Familia OL9
+              </span>
+            </div>
+          </button>
+
+          {/* GloryFit / Wearable Connection Status Badge */}
           {connectedDevice ? (
             <button
               onClick={onOpenSync}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-red-500/10 border border-red-500/40 text-[10px] font-mono text-red-400 animate-pulse hover:bg-red-500/20 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-red-500/10 border border-red-500/40 text-[10px] font-mono text-red-400 animate-pulse hover:bg-red-500/20 transition-colors"
               title={`Conectado: ${connectedDevice}`}
             >
               <Heart className="w-3.5 h-3.5 fill-current" />
-              <span className="hidden sm:inline font-bold">RELOJ ENLAZADO</span>
+              <span className="hidden md:inline font-bold">RELOJ ENLAZADO</span>
             </button>
           ) : (
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-industrial-900 border border-industrial-800 text-[10px] font-mono">
+            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-industrial-900 border border-industrial-800 text-[10px] font-mono">
               {isOnline ? (
                 <>
                   <span className="w-1.5 h-1.5 rounded-full bg-lime-accent animate-pulse" />

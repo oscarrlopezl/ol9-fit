@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Dumbbell, Flame, CheckCircle, Clock, Award, Shield, Plus, Sparkles, Coffee } from 'lucide-react';
+import { Dumbbell, Flame, CheckCircle, Clock, Award, Shield, Plus, Sparkles, Coffee, Film, X } from 'lucide-react';
 import { GYM_SPLIT } from '../../data/gymSplitData';
 import { GymDailyRoutine, GymExercise, GymLogEntry } from '../../types';
 import { Fst7EngineModal } from './Fst7EngineModal';
+import { ExerciseGifVisualizer } from '../common/ExerciseGifVisualizer';
 import { dbService } from '../../services/dbService';
 
 export const GymWorkoutView: React.FC = () => {
@@ -22,6 +23,7 @@ export const GymWorkoutView: React.FC = () => {
   const [activeDayKey, setActiveDayKey] = useState<string>(initialKey);
   const [routines, setRoutines] = useState<GymDailyRoutine[]>(GYM_SPLIT);
   const [selectedFst7Exercise, setSelectedFst7Exercise] = useState<GymExercise | null>(null);
+  const [visualizingExercise, setVisualizingExercise] = useState<GymExercise | null>(null);
   const [savedNotification, setSavedNotification] = useState<string | null>(null);
 
   const activeRoutine = routines.find((r) => r.dayKey === activeDayKey) || routines[0];
@@ -248,18 +250,30 @@ export const GymWorkoutView: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* INTERRUPTOR/BOTÓN: ACTIVAR MODO FST-7 */}
-                    <button
-                      onClick={() => setSelectedFst7Exercise(exercise)}
-                      className={`px-3 py-1.5 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all ${
-                        isFinisher
-                          ? 'bg-gold-accent text-industrial-950 shadow-gold-glow animate-pulse font-black'
-                          : 'bg-industrial-900 border border-gold-accent/40 text-gold-accent hover:bg-gold-amber/20'
-                      }`}
-                    >
-                      <Flame className="w-3.5 h-3.5 fill-current" />
-                      Activar Modo FST-7
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {/* BOTÓN VER ANIMACIÓN / GIF */}
+                      <button
+                        onClick={() => setVisualizingExercise(exercise)}
+                        className="px-2.5 py-1.5 rounded-xl bg-industrial-900 border border-industrial-700 hover:border-lime-accent/50 text-slate-300 hover:text-lime-accent text-xs font-mono font-bold flex items-center gap-1 transition-all"
+                        title="Ver Demostración Animada / GIF"
+                      >
+                        <Film className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">GIF</span>
+                      </button>
+
+                      {/* INTERRUPTOR/BOTÓN: ACTIVAR MODO FST-7 */}
+                      <button
+                        onClick={() => setSelectedFst7Exercise(exercise)}
+                        className={`px-3 py-1.5 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all ${
+                          isFinisher
+                            ? 'bg-gold-accent text-industrial-950 shadow-gold-glow animate-pulse font-black'
+                            : 'bg-industrial-900 border border-gold-accent/40 text-gold-accent hover:bg-gold-amber/20'
+                        }`}
+                      >
+                        <Flame className="w-3.5 h-3.5 fill-current" />
+                        Activar Modo FST-7
+                      </button>
+                    </div>
                   </div>
 
                   {/* Regular Sets Tracker */}
@@ -366,6 +380,53 @@ export const GymWorkoutView: React.FC = () => {
             setTimeout(() => setSavedNotification(null), 4000);
           }}
         />
+      )}
+
+      {/* Exercise Demonstration / GIF Visualizer Modal */}
+      {visualizingExercise && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-industrial-950/80 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-md bg-industrial-900 border border-industrial-800 rounded-3xl p-5 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-industrial-800 mb-3">
+              <div>
+                <h3 className="text-sm font-black font-mono text-slate-100 uppercase tracking-tight">
+                  {visualizingExercise.name}
+                </h3>
+                <p className="text-xs font-mono text-lime-accent">
+                  {visualizingExercise.targetMuscle}
+                </p>
+              </div>
+              <button
+                onClick={() => setVisualizingExercise(null)}
+                className="p-2 rounded-xl bg-industrial-950 border border-industrial-800 text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <ExerciseGifVisualizer
+              exerciseName={visualizingExercise.name}
+              animationType={
+                visualizingExercise.targetMuscle.toLowerCase().includes('pecho') || visualizingExercise.name.toLowerCase().includes('press')
+                  ? 'pushups'
+                  : visualizingExercise.targetMuscle.toLowerCase().includes('cuádriceps') || visualizingExercise.name.toLowerCase().includes('sentadilla')
+                  ? 'squats'
+                  : visualizingExercise.targetMuscle.toLowerCase().includes('glúteo') || visualizingExercise.name.toLowerCase().includes('hip')
+                  ? 'glute-bridge'
+                  : visualizingExercise.targetMuscle.toLowerCase().includes('tríceps') || visualizingExercise.name.toLowerCase().includes('fondo')
+                  ? 'dips'
+                  : 'jumping-jacks'
+              }
+              targetMuscles={[visualizingExercise.targetMuscle]}
+              customGifUrl={visualizingExercise.gifUrl}
+            />
+
+            <div className="mt-3 text-center">
+              <span className="text-[11px] font-mono text-slate-400">
+                {visualizingExercise.setsCount} series recomendadas × {visualizingExercise.targetReps}
+              </span>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

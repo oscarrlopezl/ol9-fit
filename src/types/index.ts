@@ -15,6 +15,7 @@ export interface Split {
 
 export interface RunSession {
   id: string;
+  userId?: string;
   date: string; // ISO
   durationSeconds: number;
   distanceMeters: number;
@@ -47,6 +48,7 @@ export interface AbsExercise {
   instructions: string[];
   coachingCue: string;
   svgType: string;
+  gifUrl?: string;
 }
 
 export interface AbsChallengeDay {
@@ -79,6 +81,7 @@ export interface GymExercise {
   isFst7Active?: boolean;
   notes?: string;
   sets: GymExerciseSet[];
+  gifUrl?: string;
 }
 
 export interface GymDailyRoutine {
@@ -93,6 +96,7 @@ export interface GymDailyRoutine {
 
 export interface GymLogEntry {
   id: string;
+  userId?: string;
   date: string;
   dayKey: string;
   exerciseName: string;
@@ -103,11 +107,49 @@ export interface GymLogEntry {
   notes?: string;
 }
 
+export interface HomeExercise {
+  id: string;
+  name: string;
+  targetMuscles: string[];
+  durationSeconds: number;
+  restSeconds: number;
+  repsGuide?: string;
+  instructions: string[];
+  coachingCue: string;
+  animationType: string;
+  gifUrl?: string;
+}
+
+export interface HomeRoutine {
+  id: string;
+  title: string;
+  subtitle: string;
+  category: 'hiit' | 'upper' | 'lower' | 'fullbody';
+  durationMinutes: number;
+  level: 'Principiante' | 'Intermedio' | 'Avanzado';
+  equipment: string;
+  exercises: HomeExercise[];
+  color: string;
+}
+
+export interface HomeWorkoutLog {
+  id: string;
+  userId?: string;
+  routineId: string;
+  routineTitle: string;
+  date: string;
+  durationSeconds: number;
+  caloriesBurned: number;
+  completedExercisesCount: number;
+}
+
 export interface DailyHabit {
   date: string; // YYYY-MM-DD
+  userId?: string;
   morningRunCompleted: boolean;
   absChallengeCompleted: boolean;
   gymSessionCompleted: boolean;
+  homeWorkoutCompleted?: boolean;
   totalRunKm: number;
   totalLiftedVolumeKg: number;
   notes?: string;
@@ -119,4 +161,17 @@ export interface SmartwatchState {
   heartRate: number | null;
   batteryLevel?: number | null;
   lastSyncTimestamp?: number;
+}
+
+export interface UserProfile {
+  id: string;
+  username: string;
+  name: string;
+  passwordHash: string; // PIN or password string
+  avatar: string; // Emoji avatar
+  role: 'owner' | 'member';
+  fitnessLevel: 'principiante' | 'intermedio' | 'avanzado';
+  weightKg?: number;
+  heightCm?: number;
+  createdAt: string;
 }

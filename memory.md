@@ -106,6 +106,23 @@ GloryFit es el sistema operativo y ecosistema de aplicaciones más común en rel
 - Confeti y guardado de tonelaje/volumen levantado en IndexedDB.
 
 ### Módulo 4: Dashboard y Calendario
-- Calendario interactivo mensual con puntos de colores de actividades diarias (Trote, Abdomen, Gimnasio).
+- Calendario interactivo mensual con puntos de colores de actividades diarias (Trote, Abdomen, Gimnasio, En Casa).
 - Contador de racha activa de días consecutivos.
 - Volumen total acumulado levantado en kg y kilómetros totales recorridos.
+
+### Módulo 5: Entrenamiento en Casa (Calistenia y Peso Corporal)
+- 4 rutinas completas pre-programadas: Cardio HIIT Quema-Grasa (15 min), Calistenia Tren Superior & Core (20 min), Piernas y Glúteos de Acero (16 min), Full Body Express (15 min).
+- Reproductor de intervalos guiado paso a paso con fases de trabajo y recuperación.
+- Integración sonora Web Audio API (pitidos 3-2-1 y campana de cambio).
+- Conteo calórico automático y registro en bitácora de hábitos del día.
+
+### Módulo 6: Demostraciones Animadas / GIF
+- Componente `ExerciseGifVisualizer.tsx` integrado en entrenamientos en casa y disponible para inspección en cada ejercicio del gimnasio.
+- Selector de modo dual: Demostración Animada (GIF / loops vectoriales) y Foco Anatómico (resaltado de grupos musculares primarios y secundarios).
+- Compatible con URLs de GIF externas y motores de animación SVG industriales de alta tasa de cuadros.
+
+### Módulo 7: Sistema Familiar Multiusuario con Contraseña y Perfiles Aislados
+- Servicio `authService.ts` y modal `FamilyProfilesModal.tsx`.
+- Soporte para múltiples miembros de la familia con nombre, usuario, contraseña/PIN numérico de seguridad, avatar emoji, peso, altura y nivel de entrenamiento.
+- Partición completa en IndexedDB: cada miembro de la familia tiene sus propios récords de carrera, bitácora de gimnasio, días completados del reto de 30 días y sesiones en casa sin mezclar datos.
+- Selector rápido de perfil activo en la barra superior (Header) con indicador instantáneo.

@@ -1,7 +1,8 @@
-import { RunSession, GymLogEntry, DailyHabit } from '../types';
+import { RunSession, GymLogEntry, DailyHabit, HomeWorkoutLog } from '../types';
+import { authService } from './authService';
 
 const DB_NAME = 'OL9_FIT_DB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 class IndexedDBStorage {
   private db: IDBDatabase | null = null;
@@ -24,10 +25,13 @@ class IndexedDBStorage {
           db.createObjectStore('gym_logs', { keyPath: 'id' });
         }
         if (!db.objectStoreNames.contains('abs_days')) {
-          db.createObjectStore('abs_days', { keyPath: 'day' });
+          db.createObjectStore('abs_days', { keyPath: 'user_day_key' });
         }
         if (!db.objectStoreNames.contains('habits')) {
-          db.createObjectStore('habits', { keyPath: 'date' });
+          db.createObjectStore('habits', { keyPath: 'user_date_key' });
+        }
+        if (!db.objectStoreNames.contains('home_workouts')) {
+          db.createObjectStore('home_workouts', { keyPath: 'id' });
         }
         if (!db.objectStoreNames.contains('app_state')) {
           db.createObjectStore('app_state', { keyPath: 'key' });
@@ -73,10 +77,9 @@ class IndexedDBStorage {
     const db = await this.init();
     if (!db) {
       const items = await this.getAll<T>(storeName);
-      // Key can be id, day, date, or key
-      const idKey = (item as any).id ?? (item as any).day ?? (item as any).date ?? (item as any).key;
+      const idKey = (item as any).id ?? (item as any).user_day_key ?? (item as any).user_date_key ?? (item as any).day ?? (item as any).date ?? (item as any).key;
       const index = items.findIndex((i: any) => {
-        const k = i.id ?? i.day ?? i.date ?? i.key;
+        const k = i.id ?? i.user_day_key ?? i.user_date_key ?? i.day ?? i.date ?? i.key;
         return k === idKey;
       });
       if (index >= 0) {
@@ -107,7 +110,7 @@ class IndexedDBStorage {
     const db = await this.init();
     if (!db) {
       const items = await this.getAll<any>(storeName);
-      const filtered = items.filter((i) => (i.id ?? i.day ?? i.date ?? i.key) !== key);
+      const filtered = items.filter((i) => (i.id ?? i.user_day_key ?? i.user_date_key ?? i.day ?? i.date ?? i.key) !== key);
       localStorage.setItem(`ol9_${storeName}`, JSON.stringify(filtered));
       return;
     }
@@ -130,73 +133,138 @@ class IndexedDBStorage {
 const storage = new IndexedDBStorage();
 
 export const dbService = {
-  // RUNS
+  getActiveUserId(): string {
+    return authService.getActiveUser().id;
+  },
+
+  // 1. RUNS (Partitioned by user)
   async saveRun(run: RunSession): Promise<void> {
-    await storage.put('runs', run);
-    // Automatically update daily habits
+    const userId = this.getActiveUserId();
+    const runWithUser: RunSession = {
+      ...run,
+      userId: run.userId || userId,
+    };
+    await storage.put('runs', runWithUser);
     const dateStr = run.date.split('T')[0];
     await this.recordRunInHabits(dateStr, run.distanceMeters / 1000);
   },
 
   async getRuns(): Promise<RunSession[]> {
-    const runs = await storage.getAll<RunSession>('runs');
-    return runs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const activeUserId = this.getActiveUserId();
+    const allRuns = await storage.getAll<RunSession>('runs');
+    // Filter runs for the active user (unassigned runs default to owner usr_oscar)
+    const userRuns = allRuns.filter((r) => r.userId === activeUserId || (!r.userId && activeUserId === 'usr_oscar'));
+    return userRuns.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   },
 
   async deleteRun(id: string): Promise<void> {
     await storage.delete('runs', id);
   },
 
-  // GYM LOGS
+  // 2. GYM LOGS (Partitioned by user)
   async saveGymLog(log: GymLogEntry): Promise<void> {
-    await storage.put('gym_logs', log);
+    const userId = this.getActiveUserId();
+    const logWithUser: GymLogEntry = {
+      ...log,
+      userId: log.userId || userId,
+    };
+    await storage.put('gym_logs', logWithUser);
     const dateStr = log.date.split('T')[0];
     await this.recordGymInHabits(dateStr, log.totalVolumeKg);
   },
 
   async getGymLogs(): Promise<GymLogEntry[]> {
-    const logs = await storage.getAll<GymLogEntry>('gym_logs');
-    return logs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const activeUserId = this.getActiveUserId();
+    const allLogs = await storage.getAll<GymLogEntry>('gym_logs');
+    const userLogs = allLogs.filter((l) => l.userId === activeUserId || (!l.userId && activeUserId === 'usr_oscar'));
+    return userLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   },
 
-  // ABS CHALLENGE
+  // 3. HOME WORKOUTS (Partitioned by user)
+  async saveHomeWorkout(log: HomeWorkoutLog): Promise<void> {
+    const userId = this.getActiveUserId();
+    const logWithUser = {
+      ...log,
+      userId: log.userId || userId,
+    };
+    await storage.put('home_workouts', logWithUser);
+    const dateStr = log.date.split('T')[0];
+    await this.recordHomeInHabits(dateStr);
+  },
+
+  async getHomeWorkouts(): Promise<HomeWorkoutLog[]> {
+    const activeUserId = this.getActiveUserId();
+    const all = await storage.getAll<HomeWorkoutLog>('home_workouts');
+    return all
+      .filter((h) => h.userId === activeUserId || (!h.userId && activeUserId === 'usr_oscar'))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  },
+
+  // 4. ABS CHALLENGE (Partitioned by user)
   async setAbsDayCompleted(day: number, completed: boolean): Promise<void> {
+    const userId = this.getActiveUserId();
     const today = new Date().toISOString().split('T')[0];
+    const userDayKey = `${userId}_day_${day}`;
+
     await storage.put('abs_days', {
+      user_day_key: userDayKey,
+      userId,
       day,
       completed,
-      completedAt: completed ? new Date().toISOString() : undefined
+      completedAt: completed ? new Date().toISOString() : undefined,
     });
+
     if (completed) {
       await this.recordAbsInHabits(today);
     }
   },
 
   async getAbsProgress(): Promise<{ day: number; completed: boolean; completedAt?: string }[]> {
-    return await storage.getAll<{ day: number; completed: boolean; completedAt?: string }>('abs_days');
+    const userId = this.getActiveUserId();
+    const all = await storage.getAll<any>('abs_days');
+    const userProgress = all.filter((item) => item.userId === userId || (!item.userId && userId === 'usr_oscar'));
+    return userProgress.map((item) => ({
+      day: item.day,
+      completed: item.completed,
+      completedAt: item.completedAt,
+    }));
   },
 
-  // HABITS & STATS
+  // 5. HABITS & STATS (Partitioned by user)
   async getHabits(): Promise<DailyHabit[]> {
-    const habits = await storage.getAll<DailyHabit>('habits');
-    return habits.sort((a, b) => b.date.localeCompare(a.date));
+    const userId = this.getActiveUserId();
+    const all = await storage.getAll<any>('habits');
+    const userHabits = all.filter((h) => h.userId === userId || (!h.userId && userId === 'usr_oscar'));
+    return userHabits.sort((a, b) => b.date.localeCompare(a.date));
   },
 
   async getHabitForDate(dateStr: string): Promise<DailyHabit> {
+    const userId = this.getActiveUserId();
     const habits = await this.getHabits();
     const found = habits.find((h) => h.date === dateStr);
-    return found || {
-      date: dateStr,
-      morningRunCompleted: false,
-      absChallengeCompleted: false,
-      gymSessionCompleted: false,
-      totalRunKm: 0,
-      totalLiftedVolumeKg: 0
-    };
+    return (
+      found || {
+        date: dateStr,
+        userId,
+        morningRunCompleted: false,
+        absChallengeCompleted: false,
+        gymSessionCompleted: false,
+        homeWorkoutCompleted: false,
+        totalRunKm: 0,
+        totalLiftedVolumeKg: 0,
+      }
+    );
   },
 
   async saveHabit(habit: DailyHabit): Promise<void> {
-    await storage.put('habits', habit);
+    const userId = this.getActiveUserId();
+    const userDateKey = `${userId}_date_${habit.date}`;
+    const habitWithKey = {
+      ...habit,
+      userId,
+      user_date_key: userDateKey,
+    };
+    await storage.put('habits', habitWithKey);
   },
 
   async recordRunInHabits(dateStr: string, distanceKm: number): Promise<void> {
@@ -217,5 +285,11 @@ export const dbService = {
     const habit = await this.getHabitForDate(dateStr);
     habit.absChallengeCompleted = true;
     await this.saveHabit(habit);
-  }
+  },
+
+  async recordHomeInHabits(dateStr: string): Promise<void> {
+    const habit = await this.getHabitForDate(dateStr);
+    habit.homeWorkoutCompleted = true;
+    await this.saveHabit(habit);
+  },
 };

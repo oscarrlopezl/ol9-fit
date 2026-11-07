@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Flame, Dumbbell, Compass, Award, Calendar as CalendarIcon, CheckCircle2, Circle, ChevronLeft, ChevronRight, Activity, ArrowUpRight, TrendingUp } from 'lucide-react';
+import { Flame, Dumbbell, Compass, Award, Calendar as CalendarIcon, CheckCircle2, Circle, ChevronLeft, ChevronRight, Activity, ArrowUpRight, TrendingUp, Home } from 'lucide-react';
 import { dbService } from '../../services/dbService';
 import { DailyHabit, RunSession, GymLogEntry } from '../../types';
 
 interface DashboardViewProps {
-  onNavigateTab: (tab: 'dashboard' | 'running' | 'abs' | 'gym' | 'sync') => void;
+  onNavigateTab: (tab: 'dashboard' | 'running' | 'home' | 'abs' | 'gym' | 'sync') => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) => {
@@ -37,7 +37,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
   };
 
   // Toggle habit on selected date
-  const handleToggleHabit = async (habitKey: 'morningRunCompleted' | 'absChallengeCompleted' | 'gymSessionCompleted') => {
+  const handleToggleHabit = async (habitKey: 'morningRunCompleted' | 'absChallengeCompleted' | 'gymSessionCompleted' | 'homeWorkoutCompleted') => {
     const habit = await dbService.getHabitForDate(selectedDate);
     habit[habitKey] = !habit[habitKey];
     await dbService.saveHabit(habit);
@@ -59,7 +59,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
       const dateStr = checkDate.toISOString().split('T')[0];
       const habit = sorted.find((h) => h.date === dateStr);
 
-      if (habit && (habit.morningRunCompleted || habit.absChallengeCompleted || habit.gymSessionCompleted)) {
+      if (habit && (habit.morningRunCompleted || habit.absChallengeCompleted || habit.gymSessionCompleted || habit.homeWorkoutCompleted)) {
         streak++;
       } else if (i === 0) {
         // Today hasn't been completed yet, continue checking yesterday
@@ -68,7 +68,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
         break;
       }
     }
-    return Math.max(streak, habits.filter((h) => h.morningRunCompleted || h.gymSessionCompleted).length > 0 ? 1 : 0);
+    return Math.max(streak, habits.filter((h) => h.morningRunCompleted || h.gymSessionCompleted || h.homeWorkoutCompleted).length > 0 ? 1 : 0);
   };
 
   // Compute Totals
@@ -278,6 +278,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
               const hasRun = dayHabit?.morningRunCompleted || runs.some((r) => r.date.startsWith(dateStr));
               const hasAbs = dayHabit?.absChallengeCompleted;
               const hasGym = dayHabit?.gymSessionCompleted || gymLogs.some((g) => g.date.startsWith(dateStr));
+              const hasHome = dayHabit?.homeWorkoutCompleted;
 
               return (
                 <button
@@ -300,6 +301,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                     {hasRun && <span className="w-1.5 h-1.5 rounded-full bg-lime-accent shadow-sm" title="Trote" />}
                     {hasAbs && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-sm" title="Abdomen" />}
                     {hasGym && <span className="w-1.5 h-1.5 rounded-full bg-gold-accent shadow-sm" title="Gimnasio" />}
+                    {hasHome && <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-sm" title="En Casa" />}
                   </div>
                 </button>
               );
@@ -307,15 +309,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
           </div>
 
           {/* Legend */}
-          <div className="flex items-center justify-center gap-4 text-[10px] font-mono text-slate-400 mt-4 pt-3 border-t border-industrial-800">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[10px] font-mono text-slate-400 mt-4 pt-3 border-t border-industrial-800">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-lime-accent" /> Trote Matutino
+              <span className="w-2 h-2 rounded-full bg-lime-accent" /> Trote
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-cyan-400" /> Abdominales
+              <span className="w-2 h-2 rounded-full bg-cyan-400" /> Abdomen
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-gold-accent" /> Gimnasio FST-7
+              <span className="w-2 h-2 rounded-full bg-gold-accent" /> Gimnasio
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-purple-400" /> En Casa
             </span>
           </div>
         </div>
@@ -413,6 +418,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                 </div>
                 {currentHabit.gymSessionCompleted ? (
                   <CheckCircle2 className="w-5 h-5 text-gold-accent" />
+                ) : (
+                  <Circle className="w-5 h-5 text-slate-600" />
+                )}
+              </div>
+
+              {/* 4. Home Workout (Calisthenics) */}
+              <div
+                onClick={() => handleToggleHabit('homeWorkoutCompleted')}
+                className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
+                  currentHabit.homeWorkoutCompleted
+                    ? 'bg-purple-500/10 border-purple-500/50'
+                    : 'bg-industrial-950 border-industrial-800 hover:border-industrial-700'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${currentHabit.homeWorkoutCompleted ? 'bg-purple-400 text-industrial-950' : 'bg-industrial-850 text-slate-400'}`}>
+                    <Home className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-mono font-bold text-slate-100">Entrenamiento en Casa</p>
+                    <p className="text-[10px] text-slate-400">HIIT, Calistenia & Peso Corporal</p>
+                  </div>
+                </div>
+                {currentHabit.homeWorkoutCompleted ? (
+                  <CheckCircle2 className="w-5 h-5 text-purple-400" />
                 ) : (
                   <Circle className="w-5 h-5 text-slate-600" />
                 )}
