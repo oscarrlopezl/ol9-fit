@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Bluetooth, UploadCloud, Watch, Flame, Check, AlertCircle, FileText, Heart, RefreshCw, X, Radio, Smartphone, Compass, ArrowRight, Activity } from 'lucide-react';
-import { wearableSyncService, BleHeartRateData, WearableProvider, getHeartRateZone } from '../../services/wearableSyncService';
-import { stravaService } from '../../services/stravaService';
+import { Bluetooth, UploadCloud, Watch, Check, AlertCircle, FileText, Heart, X, Smartphone, ArrowRight, Zap } from 'lucide-react';
+import { wearableSyncService, BleHeartRateData, getHeartRateZone } from '../../services/wearableSyncService';
 import { dbService } from '../../services/dbService';
 import { RunSession } from '../../types';
 
@@ -12,8 +11,8 @@ interface SyncCenterModalProps {
 }
 
 export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClose, onRunImported }) => {
-  // Tab state: 'gloryfit' | 'files' | 'strava' | 'quick'
-  const [activeSyncTab, setActiveSyncTab] = useState<'gloryfit' | 'quick' | 'files' | 'strava'>('gloryfit');
+  // Tab state: 'bluetooth' | 'quick' | 'files'
+  const [activeSyncTab, setActiveSyncTab] = useState<'bluetooth' | 'quick' | 'files'>('bluetooth');
 
   // Bluetooth state
   const [isBleConnecting, setIsBleConnecting] = useState(false);
@@ -21,40 +20,26 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
   const [liveBpm, setLiveBpm] = useState<number | null>(wearableSyncService.getLastBpm());
   const [bleError, setBleError] = useState<string | null>(null);
 
-  // Strava state
-  const [isStravaConnected, setIsStravaConnected] = useState(false);
-  const [stravaAthlete, setStravaAthlete] = useState<any>(null);
-
   // File import state
   const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
 
-  // Quick GloryFit Watch Manual Sync State
-  const [gloryKm, setGloryKm] = useState('5.00');
-  const [gloryMinutes, setGloryMinutes] = useState('28');
-  const [glorySeconds, setGlorySeconds] = useState('30');
-  const [gloryAvgBpm, setGloryAvgBpm] = useState('148');
-  const [glorySteps, setGlorySteps] = useState('5800');
-  const [glorySuccessMsg, setGlorySuccessMsg] = useState<string | null>(null);
+  // Quick Watch Manual Sync State
+  const [watchKm, setWatchKm] = useState('5.00');
+  const [watchMinutes, setWatchMinutes] = useState('28');
+  const [watchSeconds, setWatchSeconds] = useState('30');
+  const [watchAvgBpm, setWatchAvgBpm] = useState('148');
+  const [watchSteps, setWatchSteps] = useState('5800');
+  const [watchSuccessMsg, setWatchSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      checkStravaStatus();
       setBleDeviceName(wearableSyncService.getConnectedDeviceName());
       setLiveBpm(wearableSyncService.getLastBpm());
     }
   }, [isOpen]);
 
-  const checkStravaStatus = async () => {
-    const isAuth = await stravaService.isAuthenticated();
-    setIsStravaConnected(isAuth);
-    if (isAuth) {
-      const token = await dbService.getStravaToken();
-      setStravaAthlete(token?.athlete || null);
-    }
-  };
-
-  const handleConnectGloryFitBluetooth = async () => {
+  const handleConnectWatchBluetooth = async () => {
     setIsBleConnecting(true);
     setBleError(null);
     try {
@@ -71,7 +56,7 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
       if (res.success) {
         setBleDeviceName(res.deviceName);
       } else {
-        setBleError(res.error || 'No se pudo conectar al reloj GloryFit.');
+        setBleError(res.error || 'No se pudo conectar al reloj.');
       }
     } catch (e: any) {
       setBleError(e.message);
@@ -91,11 +76,11 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
     if (!file) return;
 
     setIsImporting(true);
-    setImportStatus('Leyendo y convirtiendo track de GloryFit...');
+    setImportStatus('Leyendo y convirtiendo track del reloj...');
     try {
       const session = await wearableSyncService.parseActivityFile(file);
       await dbService.saveRun(session);
-      setImportStatus(`✓ ¡Carrera de GloryFit importada exitosamente! ${(session.distanceMeters / 1000).toFixed(2)} km`);
+      setImportStatus(`✓ ¡Carrera importada con éxito! ${(session.distanceMeters / 1000).toFixed(2)} km`);
       if (onRunImported) onRunImported(session);
     } catch (err: any) {
       setImportStatus(`✕ Error al importar archivo: ${err.message}`);
@@ -104,24 +89,12 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
     }
   };
 
-  const handleToggleStrava = async () => {
-    if (isStravaConnected) {
-      await stravaService.disconnect();
-      setIsStravaConnected(false);
-      setStravaAthlete(null);
-    } else {
-      const token = await stravaService.connectDemoAccount();
-      setIsStravaConnected(true);
-      setStravaAthlete(token.athlete);
-    }
-  };
-
-  // Quick save from GloryFit watch screen
-  const handleSaveGloryFitQuickSync = async () => {
-    const kmNum = parseFloat(gloryKm) || 5;
-    const durSec = (parseInt(gloryMinutes, 10) || 0) * 60 + (parseInt(glorySeconds, 10) || 0);
-    const bpmNum = parseInt(gloryAvgBpm, 10) || 145;
-    const stepsNum = parseInt(glorySteps, 10) || 6000;
+  // Quick save from watch screen
+  const handleSaveWatchQuickSync = async () => {
+    const kmNum = parseFloat(watchKm) || 5;
+    const durSec = (parseInt(watchMinutes, 10) || 0) * 60 + (parseInt(watchSeconds, 10) || 0);
+    const bpmNum = parseInt(watchAvgBpm, 10) || 145;
+    const stepsNum = parseInt(watchSteps, 10) || 6000;
 
     const payload = {
       distance: kmNum * 1000,
@@ -135,9 +108,9 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
     const res = await wearableSyncService.syncWatchData('gloryfit', payload);
     if (res.success && res.session) {
       await dbService.saveRun(res.session);
-      setGlorySuccessMsg(`¡Entrenamiento GloryFit guardado! ${kmNum.toFixed(2)} km añadidos a la bitácora.`);
+      setWatchSuccessMsg(`¡Entrenamiento guardado! ${kmNum.toFixed(2)} km añadidos a la bitácora.`);
       if (onRunImported) onRunImported(res.session);
-      setTimeout(() => setGlorySuccessMsg(null), 4000);
+      setTimeout(() => setWatchSuccessMsg(null), 4000);
     }
   };
 
@@ -157,14 +130,14 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-mono uppercase text-lime-accent tracking-widest block">
-                  ECOSISTEMA WEARABLE
+                  ENLACE DEL RELOJ
                 </span>
                 <span className="text-[9px] font-mono bg-industrial-950 text-gold-accent px-1.5 py-0.2 rounded border border-gold-accent/40 font-bold">
-                  GLORYFIT READY
+                  CONEXIÓN DIRECTA
                 </span>
               </div>
               <h2 className="text-base font-black text-slate-100 font-mono">
-                Conectividad Reloj GloryFit
+                Conectar Reloj Inteligente
               </h2>
             </div>
           </div>
@@ -177,16 +150,16 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
         </div>
 
         {/* Sync Navigation Tabs */}
-        <div className="grid grid-cols-4 gap-1 bg-industrial-950 p-1 rounded-2xl border border-industrial-800 mb-4 text-center">
+        <div className="grid grid-cols-3 gap-1 bg-industrial-950 p-1 rounded-2xl border border-industrial-800 mb-4 text-center">
           <button
-            onClick={() => setActiveSyncTab('gloryfit')}
+            onClick={() => setActiveSyncTab('bluetooth')}
             className={`py-2 rounded-xl text-xs font-mono font-bold transition-all ${
-              activeSyncTab === 'gloryfit'
+              activeSyncTab === 'bluetooth'
                 ? 'bg-lime-accent text-industrial-950 shadow-lime-glow font-black'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            Bluetooth
+            Bluetooth (En Vivo)
           </button>
           <button
             onClick={() => setActiveSyncTab('quick')}
@@ -206,40 +179,30 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            Archivos
-          </button>
-          <button
-            onClick={() => setActiveSyncTab('strava')}
-            className={`py-2 rounded-xl text-xs font-mono font-bold transition-all ${
-              activeSyncTab === 'strava'
-                ? 'bg-lime-accent text-industrial-950 shadow-lime-glow font-black'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Strava
+            Subir Archivo
           </button>
         </div>
 
-        {/* TAB 1: BLUETOOTH GLORYFIT LINK */}
-        {activeSyncTab === 'gloryfit' && (
+        {/* TAB 1: BLUETOOTH WATCH LINK */}
+        {activeSyncTab === 'bluetooth' && (
           <div className="space-y-4">
             <div className="bg-industrial-950 border border-industrial-800 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Bluetooth className={`w-4 h-4 ${bleDeviceName ? 'text-lime-accent' : 'text-slate-400'}`} />
                   <span className="text-xs font-mono font-bold text-slate-200 uppercase">
-                    Telemetría en Vivo GloryFit (GATT BLE)
+                    Telemetría Cardíaca en Tiempo Real
                   </span>
                 </div>
                 {bleDeviceName && (
                   <span className="text-[10px] font-mono bg-lime-accent/20 text-lime-accent px-2 py-0.5 rounded font-bold">
-                    ENLAZADO
+                    CONECTADO
                   </span>
                 )}
               </div>
 
               <p className="text-[11px] text-slate-400 mb-3">
-                Conecta tu reloj GloryFit directamente mediante Web Bluetooth. Detecta chipsets Realtek / Linwear y transmite tu ritmo cardíaco en tiempo real a OL9 fit.
+                Conecta tu reloj directamente por Bluetooth. Transmite tu pulso cardíaco en tiempo real a la pantalla de carrera de OL9 fit.
               </p>
 
               {bleDeviceName ? (
@@ -288,12 +251,12 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
               ) : (
                 <div>
                   <button
-                    onClick={handleConnectGloryFitBluetooth}
+                    onClick={handleConnectWatchBluetooth}
                     disabled={isBleConnecting}
                     className="w-full py-3.5 rounded-xl bg-lime-accent hover:bg-lime-glow text-industrial-950 font-black font-mono text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lime-glow transition-all active:scale-[0.98]"
                   >
                     <Bluetooth className="w-4 h-4" />
-                    {isBleConnecting ? 'Buscando Reloj GloryFit...' : 'Vincular Reloj GloryFit'}
+                    {isBleConnecting ? 'Buscando Reloj Bluetooth...' : 'Conectar Reloj'}
                   </button>
                   {bleError && (
                     <p className="text-[10px] text-red-400 font-mono mt-2 flex items-center gap-1">
@@ -304,29 +267,28 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
               )}
             </div>
 
-            {/* GloryFit Compatibility Notice */}
             <div className="bg-industrial-950/60 border border-industrial-800 rounded-2xl p-3 text-[11px] text-slate-400 font-mono flex items-start gap-2">
-              <Smartphone className="w-4 h-4 text-gold-accent shrink-0 mt-0.5" />
+              <Zap className="w-4 h-4 text-lime-accent shrink-0 mt-0.5" />
               <div>
-                <p className="text-slate-200 font-bold mb-0.5">Modelos Compatibles GloryFit:</p>
-                <p>Relojes con chip Realtek/Linwear (Q18, Q21, G20, G35, T80, LW07, SW022, marcas como Haylou, Cubot, Blackview, KOSPET, Zeblaze que usan GloryFit).</p>
+                <p className="text-slate-200 font-bold mb-0.5">Enlace Directo:</p>
+                <p>Compatible con cualquier smartwatch o banda deportiva con sensor de ritmo cardíaco por Bluetooth.</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB 2: QUICK GLORYFIT SYNC (Ingreso instantáneo desde la pantalla del reloj) */}
+        {/* TAB 2: QUICK WATCH SYNC */}
         {activeSyncTab === 'quick' && (
           <div className="space-y-4">
             <div className="bg-industrial-950 border border-industrial-800 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Watch className="w-4 h-4 text-lime-accent" />
                 <span className="text-xs font-mono font-bold text-slate-200 uppercase">
-                  Registro Rápido de Pantalla GloryFit
+                  Registro Directo de Pantalla
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 mb-3">
-                ¿Acabas de trotar? Mira la pantalla de resumen en tu reloj GloryFit e introduce los números aquí para sincronizar de inmediato.
+                ¿Corriste con el reloj? Mira el resumen en su pantalla e ingresa los valores aquí para agregarlos al instante a tu historial en OL9 fit.
               </p>
 
               <div className="grid grid-cols-2 gap-3 mb-3">
@@ -337,8 +299,8 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
                   <input
                     type="number"
                     step="0.01"
-                    value={gloryKm}
-                    onChange={(e) => setGloryKm(e.target.value)}
+                    value={watchKm}
+                    onChange={(e) => setWatchKm(e.target.value)}
                     className="w-full bg-industrial-900 border border-industrial-700 rounded-xl px-3 py-2 text-sm font-mono font-bold text-lime-accent"
                     placeholder="5.20"
                   />
@@ -350,8 +312,8 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
                   </label>
                   <input
                     type="number"
-                    value={gloryAvgBpm}
-                    onChange={(e) => setGloryAvgBpm(e.target.value)}
+                    value={watchAvgBpm}
+                    onChange={(e) => setWatchAvgBpm(e.target.value)}
                     className="w-full bg-industrial-900 border border-industrial-700 rounded-xl px-3 py-2 text-sm font-mono font-bold text-red-400"
                     placeholder="148"
                   />
@@ -364,16 +326,16 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
                   <div className="flex items-center gap-1.5">
                     <input
                       type="number"
-                      value={gloryMinutes}
-                      onChange={(e) => setGloryMinutes(e.target.value)}
+                      value={watchMinutes}
+                      onChange={(e) => setWatchMinutes(e.target.value)}
                       className="w-full bg-industrial-900 border border-industrial-700 rounded-xl px-2 py-2 text-sm font-mono font-bold text-slate-100 text-center"
                       placeholder="28"
                     />
                     <span className="text-slate-500 font-bold">:</span>
                     <input
                       type="number"
-                      value={glorySeconds}
-                      onChange={(e) => setGlorySeconds(e.target.value)}
+                      value={watchSeconds}
+                      onChange={(e) => setWatchSeconds(e.target.value)}
                       className="w-full bg-industrial-900 border border-industrial-700 rounded-xl px-2 py-2 text-sm font-mono font-bold text-slate-100 text-center"
                       placeholder="30"
                     />
@@ -382,61 +344,57 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
 
                 <div>
                   <label className="text-[10px] font-mono uppercase text-slate-400 block mb-1">
-                    Pasos GloryFit
+                    Pasos Registrados
                   </label>
                   <input
                     type="number"
-                    value={glorySteps}
-                    onChange={(e) => setGlorySteps(e.target.value)}
+                    value={watchSteps}
+                    onChange={(e) => setWatchSteps(e.target.value)}
                     className="w-full bg-industrial-900 border border-industrial-700 rounded-xl px-3 py-2 text-sm font-mono font-bold text-gold-accent"
                     placeholder="5800"
                   />
                 </div>
               </div>
 
-              {glorySuccessMsg && (
+              {watchSuccessMsg && (
                 <div className="p-2.5 bg-lime-accent/20 border border-lime-accent text-lime-accent rounded-xl text-xs font-mono font-bold mb-3 flex items-center gap-1.5">
-                  <Check className="w-4 h-4" /> {glorySuccessMsg}
+                  <Check className="w-4 h-4" /> {watchSuccessMsg}
                 </div>
               )}
 
               <button
-                onClick={handleSaveGloryFitQuickSync}
+                onClick={handleSaveWatchQuickSync}
                 className="w-full py-3 rounded-xl bg-gold-accent hover:bg-gold-amber text-industrial-950 font-black font-mono text-xs uppercase tracking-wider shadow-gold-glow flex items-center justify-center gap-2"
               >
                 <Check className="w-4 h-4" />
-                Guardar Carrera GloryFit en Bitácora
+                Guardar Carrera en Bitácora OL9 fit
               </button>
             </div>
           </div>
         )}
 
-        {/* TAB 3: FILE IMPORTER (.GPX, .TCX, .FIT, .JSON) */}
+        {/* TAB 3: FILE IMPORTER (.GPX, .TCX, .FIT) */}
         {activeSyncTab === 'files' && (
           <div className="space-y-4">
             <div className="bg-industrial-950 border border-industrial-800 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <UploadCloud className="w-4 h-4 text-gold-accent" />
                 <span className="text-xs font-mono font-bold text-slate-200 uppercase">
-                  Importador de Rutas GloryFit
+                  Importar Archivo del Reloj
                 </span>
               </div>
 
-              <div className="bg-industrial-900/60 border border-industrial-800 rounded-xl p-3 mb-3 text-[11px] text-slate-300 font-mono space-y-1">
-                <p className="font-bold text-lime-accent">¿Cómo exportar desde la app GloryFit?</p>
-                <p>1. Abre <span className="text-slate-100 font-bold">GloryFit</span> en tu móvil.</p>
-                <p>2. Ve a <span className="text-slate-100 font-bold">Deporte &gt; Historial</span>.</p>
-                <p>3. Selecciona la carrera y toca <span className="text-slate-100 font-bold">Compartir / Exportar (.GPX o .TCX)</span>.</p>
-                <p>4. Sube el archivo aquí abajo.</p>
-              </div>
+              <p className="text-[11px] text-slate-400 mb-3">
+                Si exportaste tu ruta desde la aplicación de tu reloj en formato .GPX o .TCX, súbela aquí para ver el mapa, ritmo y splits en OL9 fit.
+              </p>
 
               <label className="flex flex-col items-center justify-center border-2 border-dashed border-industrial-700 hover:border-lime-accent rounded-xl p-5 cursor-pointer bg-industrial-900/50 transition-colors">
                 <FileText className="w-7 h-7 text-lime-accent mb-2" />
                 <span className="text-xs font-mono font-bold text-slate-200 text-center">
-                  {isImporting ? 'Parseando telemetría de GloryFit...' : 'Selecciona o arrastra archivo .GPX, .TCX o .FIT'}
+                  {isImporting ? 'Procesando archivo...' : 'Selecciona o arrastra archivo .GPX, .TCX o .FIT'}
                 </span>
                 <span className="text-[10px] text-slate-500 font-mono mt-1">
-                  Formatos compatibles de GloryFit
+                  Formatos compatibles de smartwatches
                 </span>
                 <input
                   type="file"
@@ -452,44 +410,6 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
                   {importStatus}
                 </p>
               )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: STRAVA API OAUTH */}
-        {activeSyncTab === 'strava' && (
-          <div className="space-y-4">
-            <div className="bg-industrial-950 border border-industrial-800 rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-[#FC4C02]/20 flex items-center justify-center text-[#FC4C02] font-black">
-                    <Flame className="w-5 h-5 fill-current" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-mono font-bold text-slate-100 uppercase block">
-                      Strava API OAuth 2.0
-                    </span>
-                    <span className="text-[11px] text-slate-400">
-                      {isStravaConnected ? `Conectado como ${stravaAthlete?.firstname || 'Atleta'}` : 'Sin vincular'}
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleToggleStrava}
-                  className={`px-3 py-1.5 rounded-xl font-mono text-xs font-bold uppercase tracking-wider transition-colors ${
-                    isStravaConnected
-                      ? 'bg-industrial-800 border border-industrial-700 text-slate-400 hover:text-white'
-                      : 'bg-[#FC4C02] hover:bg-[#e04300] text-white'
-                  }`}
-                >
-                  {isStravaConnected ? 'Desconectar' : 'Vincular Strava'}
-                </button>
-              </div>
-
-              <p className="text-[11px] text-slate-400">
-                Al terminar una carrera en OL9 fit, puedes publicarla automáticamente en tu feed de Strava con distancia, mapa, splits y calorías.
-              </p>
             </div>
           </div>
         )}

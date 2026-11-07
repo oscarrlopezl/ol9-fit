@@ -19,7 +19,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({ activeTab, onTab
     {
       id: 'running' as ActiveTab,
       label: 'Running',
-      sublabel: 'Strava GPS',
+      sublabel: 'OL9 Track',
       icon: Activity,
     },
     {

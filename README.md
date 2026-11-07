@@ -18,15 +18,16 @@
 
 ## ⚡ Módulos Principales
 
-### 1. 🏃 Trote Matutino Progresivo (Tipo Strava)
-- **Telemetría en Vivo:** Ritmo actual e instantáneo (min/km), distancia recorrida (km), cronómetro (HH:MM:SS), cadencia estimada (spm) y calorías quemadas.
+### 1. 🏃 Motor de Trote Matutino Propio (OL9 Track)
+- **Telemetría Nativa en Vivo:** Ritmo instantáneo y medio (min/km), distancia recorrida (km), cronómetro (HH:MM:SS), cadencia estimada (spm) y calorías quemadas.
 - **Geolocalización en Tiempo Real:** Seguimiento GPS vía `navigator.geolocation.watchPosition` con cálculo exacto de distancia mediante la fórmula de Haversine.
 - **Modo Simulación:** Alternador integrado para probar rutas y telemetría en interiores o escritorio.
 - **Mapa Leaflet Interactivo:** Modo oscuro CartoDB con polilínea de ruta en vivo y marcador de pulso.
-- **Resumen Post-Carrera:** Splits kilómetro a kilómetro, gráfica de altimetría y elevación acumulada, exportación en formato `.GPX` y `.JSON`.
-- **Integraciones Externas:**
-  - `stravaService.ts`: Conexión OAuth 2.0 y subida directa de actividades a la API de Strava.
-  - `wearableSyncService.ts`: Conectividad Web Bluetooth (`0x180D`) para sensores de frecuencia cardíaca y lector de archivos `.GPX`, `.TCX` y `.FIT` de smartwatches chinos (DaFit, FitCloudPro, GloryFit, Zepp, VeryFit).
+- **Resumen Post-Carrera y Récords Personales (PRs):** Splits kilómetro a kilómetro, gráfica de altimetría y elevación acumulada, detección de nuevos récords personales (Mejor 1K, Mejor 5K, Mayor Distancia) y exportación opcional en formato `.GPX` y `.JSON`.
+- **Conectividad con tu Smartwatch:**
+  - `wearableSyncService.ts`: Conexión directa Web Bluetooth (`0x180D`) para leer tu frecuencia cardíaca en vivo (BPM) y zonas de esfuerzo aeróbico/anaeróbico.
+  - Lector e importador directo de archivos `.GPX`, `.TCX` y `.FIT` generados por tu reloj inteligente.
+  - Formulario de **Carga Rápida** para transcribir en 5 segundos los datos de la carátula de tu reloj al terminar el trote.
 
 ### 2. 🔥 Reto Progresivo Abdominales 30 Días (Fase 1)
 - **Nivel 1 (Días 1 al 10 - Base):** Crunch clásico, Elevación de piernas en suelo, Plancha estática, Toques de talón.

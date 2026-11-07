@@ -27,19 +27,19 @@ ol9-fit/
 │   ├── services/
 │   │   ├── dbService.ts        # Persistencia robusta en IndexedDB (runs, gym_logs, abs_days, habits)
 │   │   ├── audioService.ts     # Generador de audio nativo con Web Audio API (3-2-1 pitidos, timbres y fanfarria)
-│   │   ├── stravaService.ts    # Integración OAuth 2.0 y subida de actividades a Strava API v3
-│   │   └── wearableSyncService.ts # Conector GloryFit Web Bluetooth (0x180D/Linwear), cálculo de zonas HR Z1-Z5 y lectores de archivos
+│   │   ├── ol9RecordsService.ts # Motor nativo de récords personales OL9 fit (Mejor 1K, 5K, Ritmo, Distancia)
+│   │   └── wearableSyncService.ts # Conector de reloj Web Bluetooth (0x180D/Linwear), cálculo de zonas HR Z1-Z5 y lectores de archivos
 │   ├── data/
 │   │   ├── gymSplitData.ts     # División Lunes a Viernes + Modo FST-7 + Descanso fin de semana
 │   │   └── absChallengeData.ts # 30 Días organizados en Nivel 1 (Base), Nivel 2 (Resistencia), Nivel 3 (Fuerza)
 │   ├── components/
 │   │   ├── common/
-│   │   │   ├── Header.tsx          # Cabecera con logo industrial OL9 fit y badge GLORYFIT ACTIVO
-│   │   │   └── NavigationTabs.tsx  # Dock inferior móvil para navegación táctil fluida
+│   │   │   ├── Header.tsx          # Cabecera con logo industrial OL9 fit y badge RELOJ ENLAZADO
+│   │   │   └── NavigationTabs.tsx  # Dock inferior móvil para navegación táctil fluida (OL9 Track)
 │   │   ├── running/
-│   │   │   ├── RunningTracker.tsx      # Telemetría en vivo, Leaflet Dark Map, polilínea, telemetría GloryFit en HUD
+│   │   │   ├── RunningTracker.tsx      # Telemetría en vivo, Leaflet Dark Map, polilínea, telemetría de reloj en HUD
 │   │   │   ├── ElevationPaceChart.tsx  # Gráfica SVG de altimetría y perfil de ritmo
-│   │   │   └── PostRunSummaryModal.tsx # Splits km a km, subida a Strava y exportación GPX/JSON
+│   │   │   └── PostRunSummaryModal.tsx # Splits km a km, medallas de récord personal y exportación GPX/JSON
 │   │   ├── abs/
 │   │   │   ├── AbsChallengeView.tsx    # Cuadrícula 30 días, selector de niveles y barra global de progreso
 │   │   │   ├── AbsPlayerModal.tsx      # Reproductor a pantalla completa (30s trabajo / 15s descanso, audio y controles)
@@ -50,7 +50,7 @@ ol9-fit/
 │   │   ├── dashboard/
 │   │   │   └── DashboardView.tsx       # Calendario mensual interactivo, racha activa, volumen total y km acumulados
 │   │   └── sync/
-│   │       └── SyncCenterModal.tsx     # Módulo GloryFit Bluetooth, Carga Rápida de pantalla, importador GPX/TCX y Strava
+│   │       └── SyncCenterModal.tsx     # Módulo Bluetooth de reloj, Carga Rápida de pantalla e importador GPX/TCX
 │   ├── App.tsx                         # Orquestador principal de vistas
 │   ├── main.tsx                        # Punto de entrada React 18
 │   └── index.css                       # Directivas Tailwind, animaciones y scrollbars industriales
@@ -83,12 +83,13 @@ GloryFit es el sistema operativo y ecosistema de aplicaciones más común en rel
 
 ## 4. Detalle de los Módulos de Entrenamiento
 
-### Módulo 1: Running Tipo Strava (Trote Matutino Progresivo)
+### Módulo 1: Motor Propio de Running (OL9 Track)
 - Telemetría en vivo: Ritmo instantáneo y promedio (min/km), distancia recorrida (km), cronómetro de sesión (HH:MM:SS), cadencia estimada (spm) y calorías quemadas (kcal).
 - Geolocalización con cálculo de distancia geodésica mediante fórmula de Haversine y modo simulación para interiores.
 - Mapa Leaflet en modo oscuro CartoDB con polilínea verde lima y marcador de pulso.
 - Splits por kilómetro con split más rápido destacado y gráfica SVG de altimetría.
-- Subida directa a Strava mediante OAuth 2.0 y exportación a `.GPX` / `.JSON`.
+- Sistema de Récords Personales (PRs): Detección automática de Mejor 1K, Mejor Ritmo, Mayor Distancia y Gasto Calórico.
+- Enlace directo con Smartwatch: Conexión Bluetooth 1-clic para frecuencia cardíaca en vivo (BPM) y zonas aeróbicas/anaeróbicas. Exportación opcional a `.GPX` / `.JSON`.
 
 ### Módulo 2: Abdominales (Reto Progresivo 30 Días - Fase 1)
 - 3 bloques de 10 días:

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { X, Share2, Download, Check, Award, Flame, Heart, Compass, MapPin, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Download, Check, Award, Flame, Heart, Compass, Trophy, Sparkles, ShieldCheck } from 'lucide-react';
 import { RunSession } from '../../types';
 import { ElevationPaceChart } from './ElevationPaceChart';
-import { stravaService } from '../../services/stravaService';
+import { ol9RecordsService, PersonalRecord } from '../../services/ol9RecordsService';
+import confetti from 'canvas-confetti';
 
 interface PostRunSummaryModalProps {
   session: RunSession;
@@ -11,10 +12,7 @@ interface PostRunSummaryModalProps {
 }
 
 export const PostRunSummaryModal: React.FC<PostRunSummaryModalProps> = ({ session, onClose }) => {
-  const [isUploadingStrava, setIsUploadingStrava] = useState(false);
-  const [stravaStatus, setStravaStatus] = useState<string | null>(
-    session.stravaSynced ? `Sincronizado ID #${session.stravaActivityId}` : null
-  );
+  const [newRecords, setNewRecords] = useState<PersonalRecord[]>([]);
 
   const km = (session.distanceMeters / 1000).toFixed(2);
   const paceMin = Math.floor(session.avgPaceSecondsPerKm / 60);
@@ -25,22 +23,22 @@ export const PostRunSummaryModal: React.FC<PostRunSummaryModalProps> = ({ sessio
   const seconds = session.durationSeconds % 60;
   const timeFormatted = `${hours > 0 ? `${hours}:` : ''}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-  const handleUploadToStrava = async () => {
-    setIsUploadingStrava(true);
-    setStravaStatus(null);
-    try {
-      const res = await stravaService.uploadActivity(session);
-      setStravaStatus(res.message);
-    } catch (err: any) {
-      setStravaStatus('Error de conexión con Strava.');
-    } finally {
-      setIsUploadingStrava(false);
+  // Evaluate Personal Records on Mount
+  useEffect(() => {
+    const { newRecords: records } = ol9RecordsService.evaluateRun(session);
+    setNewRecords(records);
+    if (records.length > 0) {
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.5 },
+      });
     }
-  };
+  }, [session]);
 
   const handleExportGPX = () => {
     let gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="OL9 fit - https://ol9fit.app" xmlns="http://www.topografix.com/GPX/1/1">
+<gpx version="1.1" creator="OL9 fit - https://ol9-fit.vercel.app" xmlns="http://www.topografix.com/GPX/1/1">
   <metadata>
     <name>Trote Matutino Progresivo - OL9 fit</name>
     <time>${session.date}</time>
@@ -90,7 +88,7 @@ export const PostRunSummaryModal: React.FC<PostRunSummaryModalProps> = ({ sessio
           </div>
           <div>
             <span className="text-[10px] font-mono uppercase text-lime-accent tracking-widest block">
-              RESUMEN POST-CARRERA
+              REGISTRO OFICIAL OL9 FIT
             </span>
             <h2 className="text-sm sm:text-base font-black text-slate-100 font-mono">
               Trote Matutino Progresivo
@@ -108,6 +106,26 @@ export const PostRunSummaryModal: React.FC<PostRunSummaryModalProps> = ({ sessio
 
       {/* Main Stats Grid */}
       <div className="max-w-2xl mx-auto w-full my-4 space-y-4">
+        {/* NEW PERSONAL RECORDS BADGE BANNER */}
+        {newRecords.length > 0 && (
+          <div className="bg-gradient-to-r from-gold-amber/25 via-gold-accent/20 to-gold-amber/25 border-2 border-gold-accent rounded-3xl p-4 shadow-gold-glow animate-pulse">
+            <div className="flex items-center gap-2 mb-2">
+              <Trophy className="w-5 h-5 text-gold-accent fill-current" />
+              <span className="text-xs font-mono font-black uppercase text-gold-accent tracking-wider">
+                ¡NUEVO RÉCORD PERSONAL EN OL9 FIT!
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {newRecords.map((rec) => (
+                <div key={rec.type} className="bg-industrial-950/80 border border-gold-accent/40 rounded-xl p-2 text-center">
+                  <span className="text-[10px] text-slate-400 font-mono block">{rec.title}</span>
+                  <span className="text-sm font-black font-mono text-gold-accent">{rec.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="bg-gradient-to-r from-industrial-900 via-industrial-850 to-industrial-900 border border-industrial-800 rounded-3xl p-5 shadow-industrial">
           <div className="grid grid-cols-3 gap-3 text-center mb-4">
             <div>
@@ -146,7 +164,7 @@ export const PostRunSummaryModal: React.FC<PostRunSummaryModalProps> = ({ sessio
         {/* Splits Table (Km a Km) */}
         <div className="bg-industrial-950 border border-industrial-800 rounded-2xl p-4">
           <h3 className="text-xs font-mono uppercase text-slate-400 mb-3 flex items-center justify-between">
-            <span>División por Kilómetros (Splits)</span>
+            <span>División por Kilómetros (Splits OL9)</span>
             <span className="text-slate-500">{session.splits.length} parciales</span>
           </h3>
 
@@ -194,46 +212,37 @@ export const PostRunSummaryModal: React.FC<PostRunSummaryModalProps> = ({ sessio
           )}
         </div>
 
-        {/* Strava & Export Actions */}
+        {/* OL9 FIT BITÁCORA & EXPORT ACTIONS */}
         <div className="bg-industrial-900 border border-industrial-800 rounded-2xl p-4 space-y-3">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#FC4C02]/20 border border-[#FC4C02]/40 flex items-center justify-center text-[#FC4C02] font-black">
-                <Flame className="w-5 h-5 fill-current" />
+              <div className="w-10 h-10 rounded-xl bg-lime-accent/20 border border-lime-accent/40 flex items-center justify-center text-lime-accent font-black">
+                <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-xs font-bold text-slate-100 font-mono uppercase">
-                  Sincronización con Strava
+                  Guardado en tu Bitácora Local OL9
                 </p>
                 <p className="text-[11px] text-slate-400">
-                  {stravaStatus || 'Sube directamente la sesión a tu feed de Strava vía OAuth 2.0.'}
+                  Carrera almacenada en tu base de datos IndexedDB y sumada a tus kilómetros acumulados.
                 </p>
               </div>
             </div>
-
-            <button
-              onClick={handleUploadToStrava}
-              disabled={isUploadingStrava}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#FC4C02] hover:bg-[#e04300] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-            >
-              <ExternalLink className="w-4 h-4" />
-              {isUploadingStrava ? 'Subiendo...' : 'Publicar en Strava'}
-            </button>
           </div>
 
           <div className="flex gap-2 pt-2 border-t border-industrial-800">
             <button
               onClick={handleExportGPX}
-              className="flex-1 py-2 rounded-xl bg-industrial-950 border border-industrial-700 hover:border-slate-400 text-slate-300 text-xs font-mono flex items-center justify-center gap-2 transition-colors"
+              className="flex-1 py-2 rounded-xl bg-industrial-950 border border-industrial-700 hover:border-lime-accent text-slate-300 text-xs font-mono flex items-center justify-center gap-2 transition-colors"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-3.5 h-3.5 text-lime-accent" />
               Descargar .GPX
             </button>
             <button
               onClick={handleExportJSON}
-              className="flex-1 py-2 rounded-xl bg-industrial-950 border border-industrial-700 hover:border-slate-400 text-slate-300 text-xs font-mono flex items-center justify-center gap-2 transition-colors"
+              className="flex-1 py-2 rounded-xl bg-industrial-950 border border-industrial-700 hover:border-lime-accent text-slate-300 text-xs font-mono flex items-center justify-center gap-2 transition-colors"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-3.5 h-3.5 text-gold-accent" />
               Exportar JSON
             </button>
           </div>
@@ -247,7 +256,7 @@ export const PostRunSummaryModal: React.FC<PostRunSummaryModalProps> = ({ sessio
           className="w-full py-4 rounded-2xl bg-lime-accent hover:bg-lime-glow text-industrial-950 font-black font-mono uppercase tracking-wider text-sm shadow-lime-glow flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
         >
           <Check className="w-5 h-5" />
-          Guardar y Volver a la Bitácora
+          Finalizar y Volver al Dashboard
         </button>
       </div>
     </div>

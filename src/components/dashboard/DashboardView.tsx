@@ -175,7 +175,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
             </div>
             <div>
               <p className="text-xs font-mono font-bold text-slate-200 uppercase">Trote Matutino</p>
-              <p className="text-[11px] text-slate-400">Strava & Telemetría GPS</p>
+              <p className="text-[11px] text-slate-400">Telemetría GPS Propia OL9</p>
             </div>
           </div>
           <ArrowUpRight className="w-4 h-4 text-slate-500 group-hover:text-lime-accent transition-colors" />
@@ -355,7 +355,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                   <div>
                     <p className="text-xs font-mono font-bold text-slate-100">Trote Matutino Progresivo</p>
                     <p className="text-[10px] text-slate-400">
-                      {currentHabit.totalRunKm > 0 ? `${currentHabit.totalRunKm} km registrados` : 'Telemetría Strava / GPS'}
+                      {currentHabit.totalRunKm > 0 ? `${currentHabit.totalRunKm} km registrados` : 'Telemetría GPS OL9 Track'}
                     </p>
                   </div>
                 </div>

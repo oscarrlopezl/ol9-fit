@@ -27,8 +27,9 @@ export interface RunSession {
   route: GeoPoint[];
   splits: Split[];
   elevationGainMeters: number;
-  stravaSynced?: boolean;
-  stravaActivityId?: string;
+  isPersonalRecord?: boolean;
+  prBadges?: string[];
+  smartwatchSynced?: boolean;
   source?: 'live' | 'gpx' | 'tcx' | 'fit' | 'demo';
   notes?: string;
 }
@@ -112,22 +113,10 @@ export interface DailyHabit {
   notes?: string;
 }
 
-export interface WearableDeviceState {
+export interface SmartwatchState {
   connected: boolean;
   deviceName: string | null;
   heartRate: number | null;
   batteryLevel?: number | null;
   lastSyncTimestamp?: number;
-}
-
-export interface StravaTokenData {
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: number;
-  athlete?: {
-    id: number;
-    username: string;
-    firstname: string;
-    lastname: string;
-  };
 }

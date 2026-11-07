@@ -54,7 +54,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSync }) => {
                 OL9 <span className="text-lime-accent font-extrabold">fit</span>
               </span>
               <span className="text-[9px] font-mono bg-lime-accent/20 text-lime-accent px-1.5 py-0.5 rounded border border-lime-accent/40 font-bold tracking-wider">
-                GLORYFIT OS
+                PRO
               </span>
             </div>
             <p className="text-[10px] text-slate-400 font-mono tracking-wider uppercase -mt-1 hidden sm:block">
@@ -73,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSync }) => {
               title={`Conectado: ${connectedDevice}`}
             >
               <Heart className="w-3.5 h-3.5 fill-current" />
-              <span className="hidden sm:inline font-bold">GLORYFIT ACTIVO</span>
+              <span className="hidden sm:inline font-bold">RELOJ ENLAZADO</span>
             </button>
           ) : (
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-industrial-900 border border-industrial-800 text-[10px] font-mono">
@@ -104,13 +104,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSync }) => {
             )}
           </button>
 
-          {/* Wearables & Strava Sync Center Button */}
+          {/* Watch Sync Center Button */}
           <button
             onClick={onOpenSync}
             className="px-3 py-2 rounded-xl bg-industrial-900 hover:bg-industrial-800 border border-industrial-700 hover:border-lime-accent/50 text-slate-200 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors shadow-sm"
           >
             <Watch className="w-4 h-4 text-lime-accent" />
-            <span className="hidden sm:inline">GloryFit</span>
+            <span className="hidden sm:inline">Reloj</span>
           </button>
         </div>
       </div>

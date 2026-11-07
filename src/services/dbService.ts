@@ -1,4 +1,4 @@
-import { RunSession, GymLogEntry, DailyHabit, StravaTokenData } from '../types';
+import { RunSession, GymLogEntry, DailyHabit } from '../types';
 
 const DB_NAME = 'OL9_FIT_DB';
 const DB_VERSION = 1;
@@ -217,24 +217,5 @@ export const dbService = {
     const habit = await this.getHabitForDate(dateStr);
     habit.absChallengeCompleted = true;
     await this.saveHabit(habit);
-  },
-
-  // STRAVA TOKENS
-  async getStravaToken(): Promise<StravaTokenData | null> {
-    const raw = localStorage.getItem('ol9_strava_auth');
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw) as StravaTokenData;
-    } catch {
-      return null;
-    }
-  },
-
-  async saveStravaToken(token: StravaTokenData): Promise<void> {
-    localStorage.setItem('ol9_strava_auth', JSON.stringify(token));
-  },
-
-  async removeStravaToken(): Promise<void> {
-    localStorage.removeItem('ol9_strava_auth');
   }
 };

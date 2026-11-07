@@ -426,27 +426,27 @@ export const RunningTracker: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className={`w-2.5 h-2.5 rounded-full ${isRunning && !isPaused ? 'bg-lime-accent animate-ping' : 'bg-slate-500'}`} />
             <span className="text-[11px] font-mono font-bold tracking-widest uppercase text-lime-accent">
-              TROTE MATUTINO PROGRESIVO
+              OL9 TRACK • TROTE MATUTINO
             </span>
           </div>
 
-          {/* GloryFit Link, Heart Rate Badge & Simulation Toggle */}
+          {/* Watch Link, Heart Rate Badge & Simulation Toggle */}
           <div className="flex items-center gap-2">
             {heartRate ? (
               <div className="flex items-center gap-1 bg-red-500/20 border border-red-500/40 px-2.5 py-0.5 rounded-full text-red-400 font-mono text-xs">
                 <Heart className="w-3.5 h-3.5 fill-current animate-pulse" />
                 <span>{heartRate} bpm</span>
-                <span className="text-[9px] text-slate-400 hidden sm:inline">(GloryFit)</span>
+                <span className="text-[9px] text-slate-400 hidden sm:inline">(Reloj)</span>
               </div>
             ) : (
               <button
                 onClick={handleConnectGloryFitHUD}
                 disabled={isGloryFitConnecting}
                 className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-industrial-900 border border-lime-accent/40 text-lime-accent hover:bg-industrial-800 text-[10px] font-mono font-bold transition-colors"
-                title="Vincular pulso desde tu reloj GloryFit"
+                title="Vincular pulso desde tu reloj inteligente"
               >
                 <Watch className="w-3 h-3 text-lime-accent" />
-                <span>{isGloryFitConnecting ? 'Buscando...' : '+ Vincular GloryFit'}</span>
+                <span>{isGloryFitConnecting ? 'Buscando...' : '+ Vincular Reloj'}</span>
               </button>
             )}
             <button
