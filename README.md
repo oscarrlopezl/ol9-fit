@@ -1,12 +1,18 @@
 # OL9 fit — Progressive High-Performance Training PWA
 
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Live_Online-000000?style=flat-square&logo=vercel)](https://ol9-fit.vercel.app)
+[![Production URL](https://img.shields.io/badge/Production-ol9--fit.vercel.app-bdf200?style=flat-square)](https://ol9-fit.vercel.app)
 [![React](https://img.shields.io/badge/React-18.3-61dafb?style=flat-square&logo=react)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.2-646CFF?style=flat-square&logo=vite)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
+[![GloryFit Ready](https://img.shields.io/badge/GloryFit-Bluetooth_Ready-eab308?style=flat-square)](https://ol9-fit.vercel.app)
 [![PWA Ready](https://img.shields.io/badge/PWA-Offline_Ready-bdf200?style=flat-square)](https://web.dev/progressive-web-apps/)
-[![License](https://img.shields.io/badge/License-MIT-eab308?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-slate?style=flat-square)](LICENSE)
 
-**OL9 fit** es una aplicación web progresiva (PWA) de entrenamiento físico personal de alto rendimiento, optimizada para dispositivos móviles (mobile-first), con una estética industrial oscura (`#0f172a`, verde lima neón, dorado ámbar y gris acero).
+> 🚀 **App en Producción Activa 24/7:**  
+> **[https://ol9-fit.vercel.app](https://ol9-fit.vercel.app)**
+
+**OL9 fit** es una aplicación web progresiva (PWA) de entrenamiento físico personal de alto rendimiento, optimizada para dispositivos móviles (mobile-first), con una estética industrial oscura (`#0f172a`, verde lima neón, dorado ámbar y gris acero), conectada al ecosistema de smartwatches **GloryFit** y desplegada en producción en Vercel con integración continua.
 
 ---
 

@@ -3,6 +3,8 @@
 ## 1. Visión General del Proyecto
 - **Nombre Oficial y Marca:** `OL9 fit`
 - **Tipo de Aplicación:** Progressive Web Application (PWA) de alto rendimiento, mobile-first, diseñada para entrenamiento personal progresivo.
+- **URL de Producción Vercel (Activa 24/7):** [https://ol9-fit.vercel.app](https://ol9-fit.vercel.app)
+- **Repositorio GitHub Conectado:** [https://github.com/oscarrlopezl/ol9-fit](https://github.com/oscarrlopezl/ol9-fit) (Despliegue Continuo automatizado en cada `git push`)
 - **Ecosistema Wearable Oficial:** Smartwatches con sistema operativo **GloryFit** (Realtek / Linwear chipsets) con soporte para Web Bluetooth y parseo de tracks (.GPX, .TCX, .FIT, .JSON).
 - **Estética Visual:** Industrial oscura:
   - Fondo primario: `#0f172a` (slate-900) y `#090d16` (slate-950).
